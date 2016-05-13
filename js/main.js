@@ -51,6 +51,11 @@ function initialize() {
           console.log('Error during getSubscription()', err);
         });
   });
+  
+  // cURLコマンドの領域をクリックしたらコマンドを全選択する
+  curlCommandArea.addEventListener('click', function() {
+    selectCurlText();
+  });
 }
 
 
@@ -139,6 +144,9 @@ function showCurlCommand(mergedEndpoint) {
       ' -d "{\\"registration_ids\\":[\\"' + subscriptionId + '\\"]}"';
 
   curlCommandArea.textContent = curlCommand;
+  
+  // コマンドを選択状態にする
+  selectCurlText();
 }
 
 function endpointWorkaround(pushSubscription) {
@@ -155,7 +163,6 @@ function endpointWorkaround(pushSubscription) {
   return mergedEndpoint;
 }
 
-// プッシュ通知設定のボタン押下時の処理
 window.addEventListener('load', function() {
   pushButton.addEventListener('click', function() {
     if (!pushButton.checked) {
@@ -174,3 +181,13 @@ window.addEventListener('load', function() {
   }
 });
 
+
+/**
+ * cURLコマンドの領域をクリックしたらコマンドを全選択します。
+ */
+function selectCurlText() {
+  var range = document.createRange();
+  range.selectNodeContents(curlCommandArea);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+}
