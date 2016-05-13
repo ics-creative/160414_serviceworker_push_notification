@@ -5,7 +5,7 @@
         "src": "ics_logo_512x512.png",
         "sizes": "512x512"
       }],
-  "start_url": "./",
+  "start_url": "/",
   "display": "standalone",
   "gcm_sender_id": "1055020870596"
 }

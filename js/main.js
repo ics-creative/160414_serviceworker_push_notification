@@ -1,33 +1,39 @@
 'use strict';
 
+// GoogleCouldMessagingで取得したAPIキーを設定
 var API_KEY = 'AIzaSyDpx5LWS0vpR_PfHJ4tMdWBwV9JR-N4QiE';
 
+// GCMのエンドポイントのBaseURL
 var GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send';
-var curlCommandArea = document.querySelector('#curlCommand');
 
+var curlCommandArea = document.querySelector('#curlCommand');
 var pushButton = document.querySelector('#pushEnableButton');
 
-function initialise() {
+/**
+ * 初期化処理を行います。
+ */
+function initialize() {
   // プッシュ通知に対応しているかの判定
   if (!('showNotification' in ServiceWorkerRegistration.prototype)) {
     console.log('Notifications aren\'t supported.');
     showUnsupported();
     return;
   }
+  // プッシュ通知が拒否設定になっていないかを確認
   if (Notification.permission === 'denied') {
     console.log('The user has blocked notifications.');
     showUnsupported();
     return;
   }
+  // プッシュ通知に対応しているかの判定
   if (!('PushManager' in window)) {
     console.log('Push messaging isn\'t supported.');
     showUnsupported();
     return;
   }
 
-  // ServiceWorkerの既にSubscriptionをチェック
   navigator.serviceWorker.ready.then(function(serviceWorkerRegistration) {
-    // 既にSubscriptionを取得済みであるかをチェック
+    // 登録されているsubscriptionを取得します。
     serviceWorkerRegistration.pushManager.getSubscription()
         .then(function(subscription) {
 
@@ -48,11 +54,15 @@ function initialise() {
 }
 
 
+/**
+ * 登録されているsubscription通知を解除します。
+ */
 function unsubscribe() {
   pushButton.disabled = true;
   curlCommandArea.textContent = '';
 
   navigator.serviceWorker.ready.then(function(serviceWorkerRegistration) {
+    // 登録されているsubscriptionを取得します。
     serviceWorkerRegistration.pushManager.getSubscription().then(
       function(pushSubscription) {
         if (!pushSubscription) {
@@ -72,6 +82,9 @@ function unsubscribe() {
   });
 }
 
+/**
+ * subscriptionを登録し結果を取得します。
+ */
 function subscribe() {
   pushButton.disabled = true;
 
@@ -94,16 +107,25 @@ function subscribe() {
   });
 }
 
+/**
+ * 登録したsubscriptionをサーバーに送ります。
+ */
 function sendSubscriptionToServer(subscription) {
   var mergedEndpoint = endpointWorkaround(subscription);
   showCurlCommand(mergedEndpoint);
 }
 
+/**
+ * 非サポートメッセージを表示します。
+ */
 function showUnsupported() {
   document.querySelector('.supported').style.display = 'none';
   document.querySelector('.unsupported').style.display = 'block';
 }
 
+/**
+ * 引数に指定されてEndpointの情報を元にcURLコマンドを作成し表示します。
+ */
 function showCurlCommand(mergedEndpoint) {
   if (mergedEndpoint.indexOf(GCM_ENDPOINT) !== 0) {
     console.log('This browser isn\'t currently supported for this demo');
@@ -146,8 +168,9 @@ window.addEventListener('load', function() {
   // ServiceWokerをサポートしているかチェック
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js')
-    .then(initialise);
+    .then(initialize);
   } else {
     showUnsupported();
   }
 });
+
