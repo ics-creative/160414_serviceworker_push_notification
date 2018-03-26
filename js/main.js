@@ -32,32 +32,31 @@ function initialize() {
     return;
   }
 
-  navigator.serviceWorker.ready.then(function(serviceWorkerRegistration) {
+  navigator.serviceWorker.ready.then(function (serviceWorkerRegistration) {
     // 登録されているsubscriptionを取得します。
     serviceWorkerRegistration.pushManager.getSubscription()
-        .then(function(subscription) {
+      .then(function (subscription) {
 
-          pushButton.disabled = false;
+        pushButton.disabled = false;
 
-          if (!subscription) {
-            return;
-          }
+        if (!subscription) {
+          return;
+        }
 
-          sendSubscriptionToServer(subscription);
+        sendSubscriptionToServer(subscription);
 
-          pushButton.checked = true;
-        })
-        .catch(function(err) {
-          console.log('Error during getSubscription()', err);
-        });
+        pushButton.checked = true;
+      })
+      .catch(function (err) {
+        console.log('Error during getSubscription()', err);
+      });
   });
-  
+
   // cURLコマンドの領域をクリックしたらコマンドを全選択する
-  curlCommandArea.addEventListener('click', function() {
+  curlCommandArea.addEventListener('click', function () {
     selectCurlText();
   });
 }
-
 
 /**
  * 登録されているsubscription通知を解除します。
@@ -66,24 +65,24 @@ function unsubscribe() {
   pushButton.disabled = true;
   curlCommandArea.textContent = '';
 
-  navigator.serviceWorker.ready.then(function(serviceWorkerRegistration) {
+  navigator.serviceWorker.ready.then(function (serviceWorkerRegistration) {
     // 登録されているsubscriptionを取得します。
     serviceWorkerRegistration.pushManager.getSubscription().then(
-      function(pushSubscription) {
+      function (pushSubscription) {
         if (!pushSubscription) {
           pushButton.disabled = false;
           return;
         }
 
-        pushSubscription.unsubscribe().then(function() {
+        pushSubscription.unsubscribe().then(function () {
           pushButton.disabled = false;
-        }).catch(function(e) {
+        }).catch(function (e) {
           console.log('Unsubscription error: ', e);
           pushButton.disabled = false;
         });
-      }).catch(function(e) {
-        console.log('Error thrown while unsubscribing from push messaging.', e);
-      });
+      }).catch(function (e) {
+      console.log('Error thrown while unsubscribing from push messaging.', e);
+    });
   });
 }
 
@@ -93,14 +92,14 @@ function unsubscribe() {
 function subscribe() {
   pushButton.disabled = true;
 
-  navigator.serviceWorker.ready.then(function(serviceWorkerRegistration) {
+  navigator.serviceWorker.ready.then(function (serviceWorkerRegistration) {
     serviceWorkerRegistration.pushManager.subscribe({userVisibleOnly: true})
-      .then(function(subscription) {
+      .then(function (subscription) {
         pushButton.disabled = false;
 
         return sendSubscriptionToServer(subscription);
       })
-      .catch(function(e) {
+      .catch(function (e) {
         if (Notification.permission === 'denied') {
           console.log('Permission for Notifications was denied');
           pushButton.disabled = true;
@@ -140,11 +139,11 @@ function showCurlCommand(mergedEndpoint) {
   var endpointSections = mergedEndpoint.split('/');
   var subscriptionId = endpointSections[endpointSections.length - 1];
   var curlCommand = 'curl --header "Authorization: key=' + API_KEY +
-      '" --header Content-Type:"application/json" ' + GCM_ENDPOINT +
-      ' -d "{\\"registration_ids\\":[\\"' + subscriptionId + '\\"]}"';
+    '" --header Content-Type:"application/json" ' + GCM_ENDPOINT +
+    ' -d "{\\"registration_ids\\":[\\"' + subscriptionId + '\\"]}"';
 
   curlCommandArea.textContent = curlCommand;
-  
+
   // コマンドを選択状態にする
   selectCurlText();
 }
@@ -156,15 +155,15 @@ function endpointWorkaround(pushSubscription) {
 
   var mergedEndpoint = pushSubscription.endpoint;
   if (pushSubscription.subscriptionId &&
-      pushSubscription.endpoint.indexOf(pushSubscription.subscriptionId) === -1) {
+    pushSubscription.endpoint.indexOf(pushSubscription.subscriptionId) === -1) {
     mergedEndpoint = pushSubscription.endpoint + '/' +
-        pushSubscription.subscriptionId;
+      pushSubscription.subscriptionId;
   }
   return mergedEndpoint;
 }
 
-window.addEventListener('load', function() {
-  pushButton.addEventListener('click', function() {
+window.addEventListener('load', function () {
+  pushButton.addEventListener('click', function () {
     if (!pushButton.checked) {
       unsubscribe();
     } else {
@@ -175,12 +174,11 @@ window.addEventListener('load', function() {
   // ServiceWokerをサポートしているかチェック
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js')
-    .then(initialize);
+      .then(initialize);
   } else {
     showUnsupported();
   }
 });
-
 
 /**
  * cURLコマンドの領域をクリックしたらコマンドを全選択します。

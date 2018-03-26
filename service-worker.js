@@ -1,6 +1,6 @@
 'use strict';
 
-self.addEventListener('push', function(event) {
+self.addEventListener('push', function (event) {
   console.log('Received a push message', event);
 
   // サンプルでは固定のメッセージを通知するようにしています。
@@ -24,18 +24,18 @@ self.addEventListener('push', function(event) {
   );
 });
 
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('notificationclick', function (event) {
   console.log('On notification click: ', event.notification.tag);
   event.notification.close();
 
- var notoficationURL = "/"
+  var notoficationURL = '/';
   if (event.notification.data.url) {
-    notoficationURL = event.notification.data.url
+    notoficationURL = event.notification.data.url;
   }
-  
+
   event.waitUntil(clients.matchAll({
     type: 'window'
-  }).then(function(clientList) {
+  }).then(function (clientList) {
     for (var i = 0; i < clientList.length; i++) {
       var client = clientList[i];
       if (client.url === '/' && 'focus' in client) {
