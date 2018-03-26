@@ -1,130 +1,127 @@
-'use strict';
-
 // GoogleCouldMessagingで取得したAPIキーを設定
-var API_KEY = 'AIzaSyDpx5LWS0vpR_PfHJ4tMdWBwV9JR-N4QiE';
+const API_KEY = 'AIzaSyDpx5LWS0vpR_PfHJ4tMdWBwV9JR-N4QiE';
 
 // GCMのエンドポイントのBaseURL
-var GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send';
+const GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send';
 
-var curlCommandArea = document.querySelector('#curlCommand');
-var pushButton = document.querySelector('#pushEnableButton');
+const elementTextarea = document.querySelector('#curlCommand');
+const elementPushButton = document.querySelector('#pushEnableButton');
+
+window.addEventListener('DOMContentLoaded', async () => {
+
+  // ServiceWorkerをサポートしているかチェック
+  if ('serviceWorker' in navigator) {
+    await navigator.serviceWorker.register('./service-worker.js');
+    initServiceWorker();
+  } else {
+    showUnsupported('お使いのブラウザはServiceWorkerに対応していません。');
+  }
+
+  initUi();
+});
 
 /**
- * 初期化処理を行います。
+ * プッシュ通知の初期化を行います。
+ * @returns {Promise<void>}
  */
-function initialize() {
+async function initServiceWorker() {
   // プッシュ通知に対応しているかの判定
   if (!('showNotification' in ServiceWorkerRegistration.prototype)) {
-    console.log('Notifications aren\'t supported.');
-    showUnsupported();
+    showUnsupported('Notifications aren\'t supported.');
     return;
   }
   // プッシュ通知が拒否設定になっていないかを確認
   if (Notification.permission === 'denied') {
-    console.log('The user has blocked notifications.');
-    showUnsupported();
+    showUnsupported('The user has blocked notifications.');
     return;
   }
   // プッシュ通知に対応しているかの判定
   if (!('PushManager' in window)) {
-    console.log('Push messaging isn\'t supported.');
-    showUnsupported();
+    showUnsupported('Push messaging isn\'t supported.');
     return;
   }
 
-  navigator.serviceWorker.ready.then(function (serviceWorkerRegistration) {
-    // 登録されているsubscriptionを取得します。
-    serviceWorkerRegistration.pushManager.getSubscription()
-      .then(function (subscription) {
+  const serviceWorkerRegistration = await navigator.serviceWorker.ready;
 
-        pushButton.disabled = false;
+  // 登録されている Subscription を取得します
+  // 前回、有効にした状態であれば、Subscription に値が得られる
+  const subscription = await serviceWorkerRegistration.pushManager.getSubscription();
 
-        if (!subscription) {
-          return;
-        }
+  // 登録されていなければ処理を中断
+  if (subscription === null) {
+    return;
+  }
 
-        sendSubscriptionToServer(subscription);
+  // 登録した Subscription をサーバーに送ります
+  sendSubscriptionToServer(subscription);
 
-        pushButton.checked = true;
-      })
-      .catch(function (err) {
-        console.log('Error during getSubscription()', err);
-      });
-  });
-
-  // cURLコマンドの領域をクリックしたらコマンドを全選択する
-  curlCommandArea.addEventListener('click', function () {
-    selectCurlText();
-  });
-}
-
-/**
- * 登録されているsubscription通知を解除します。
- */
-function unsubscribe() {
-  pushButton.disabled = true;
-  curlCommandArea.textContent = '';
-
-  navigator.serviceWorker.ready.then(function (serviceWorkerRegistration) {
-    // 登録されているsubscriptionを取得します。
-    serviceWorkerRegistration.pushManager.getSubscription().then(
-      function (pushSubscription) {
-        if (!pushSubscription) {
-          pushButton.disabled = false;
-          return;
-        }
-
-        pushSubscription.unsubscribe().then(function () {
-          pushButton.disabled = false;
-        }).catch(function (e) {
-          console.log('Unsubscription error: ', e);
-          pushButton.disabled = false;
-        });
-      }).catch(function (e) {
-      console.log('Error thrown while unsubscribing from push messaging.', e);
-    });
-  });
+  // UIを更新（既に登録済みであることを示す）
+  elementPushButton.checked = true;
 }
 
 /**
  * subscriptionを登録し結果を取得します。
  */
-function subscribe() {
-  pushButton.disabled = true;
+async function subscribe() {
 
-  navigator.serviceWorker.ready.then(function (serviceWorkerRegistration) {
-    serviceWorkerRegistration.pushManager.subscribe({userVisibleOnly: true})
-      .then(function (subscription) {
-        pushButton.disabled = false;
+  const serviceWorkerRegistration = await navigator.serviceWorker.ready;
 
-        return sendSubscriptionToServer(subscription);
-      })
-      .catch(function (e) {
-        if (Notification.permission === 'denied') {
-          console.log('Permission for Notifications was denied');
-          pushButton.disabled = true;
-        } else {
-          console.log('Unable to subscribe to push.', e);
-          pushButton.disabled = false;
-        }
-      });
-  });
+  try {
+    const subscription = await serviceWorkerRegistration.pushManager.subscribe({
+      userVisibleOnly: true
+    });
+
+    sendSubscriptionToServer(subscription);
+  } catch (e) {
+    if (Notification.permission === 'denied') {
+      console.warn('Permission for Notifications was denied');
+    } else {
+      console.warn('Unable to subscribe to push.', e);
+    }
+    // 有効にできなかったため、チェックボックスを外す
+    elementPushButton.checked = false;
+  }
+}
+
+/**
+ * 登録されているsubscription通知を解除します。
+ */
+async function unsubscribe() {
+  const serviceWorkerRegistration = await navigator.serviceWorker.ready;
+
+  try {
+    // 登録されている Subscription を取得します
+    const pushSubscription = await serviceWorkerRegistration.pushManager.getSubscription();
+    // Push通知の Subscription があれば
+    if (pushSubscription) {
+      // 解除する
+      await pushSubscription.unsubscribe();
+    }
+
+  } catch (e) {
+    console.error('Error thrown while unsubscribing from push messaging.', e);
+  }
+
+  // UIを更新
+  elementPushButton.checked = false;
+  elementTextarea.textContent = '';
 }
 
 /**
  * 登録したsubscriptionをサーバーに送ります。
  */
 function sendSubscriptionToServer(subscription) {
-  var mergedEndpoint = endpointWorkaround(subscription);
+  const mergedEndpoint = endpointWorkaround(subscription);
   showCurlCommand(mergedEndpoint);
 }
 
 /**
  * 非サポートメッセージを表示します。
  */
-function showUnsupported() {
+function showUnsupported(message) {
   document.querySelector('.supported').style.display = 'none';
   document.querySelector('.unsupported').style.display = 'block';
+  document.querySelector('.unsupported').innerHTML = message;
 }
 
 /**
@@ -136,13 +133,14 @@ function showCurlCommand(mergedEndpoint) {
     return;
   }
 
-  var endpointSections = mergedEndpoint.split('/');
-  var subscriptionId = endpointSections[endpointSections.length - 1];
-  var curlCommand = 'curl --header "Authorization: key=' + API_KEY +
-    '" --header Content-Type:"application/json" ' + GCM_ENDPOINT +
-    ' -d "{\\"registration_ids\\":[\\"' + subscriptionId + '\\"]}"';
+  const endpointSections = mergedEndpoint.split('/');
+  const subscriptionId = endpointSections[endpointSections.length - 1];
+  const curlCommand =
+          `curl --header "Authorization: key=${API_KEY}" `
+          + `--header Content-Type:"application/json" ${GCM_ENDPOINT} `
+          + `-d "{\\"registration_ids\\":[\\"${subscriptionId}\\"]}"`;
 
-  curlCommandArea.textContent = curlCommand;
+  elementTextarea.textContent = curlCommand;
 
   // コマンドを選択状態にする
   selectCurlText();
@@ -153,7 +151,7 @@ function endpointWorkaround(pushSubscription) {
     return pushSubscription.endpoint;
   }
 
-  var mergedEndpoint = pushSubscription.endpoint;
+  let mergedEndpoint = pushSubscription.endpoint;
   if (pushSubscription.subscriptionId &&
     pushSubscription.endpoint.indexOf(pushSubscription.subscriptionId) === -1) {
     mergedEndpoint = pushSubscription.endpoint + '/' +
@@ -162,30 +160,28 @@ function endpointWorkaround(pushSubscription) {
   return mergedEndpoint;
 }
 
-window.addEventListener('load', function () {
-  pushButton.addEventListener('click', function () {
-    if (!pushButton.checked) {
+function initUi() {
+
+  elementPushButton.addEventListener('click', () => {
+    if (elementPushButton.checked === false) {
       unsubscribe();
     } else {
       subscribe();
     }
   });
 
-  // ServiceWokerをサポートしているかチェック
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js')
-      .then(initialize);
-  } else {
-    showUnsupported();
-  }
-});
+  // cURLコマンドの領域をクリックしたらコマンドを全選択する
+  elementTextarea.addEventListener('click', () => {
+    selectCurlText();
+  });
+}
 
 /**
  * cURLコマンドの領域をクリックしたらコマンドを全選択します。
  */
 function selectCurlText() {
-  var range = document.createRange();
-  range.selectNodeContents(curlCommandArea);
+  const range = document.createRange();
+  range.selectNodeContents(elementTextarea);
   window.getSelection().removeAllRanges();
   window.getSelection().addRange(range);
 }
