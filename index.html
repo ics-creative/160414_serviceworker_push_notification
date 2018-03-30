@@ -1,16 +1,18 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8"/>
   <title>プッシュ通知のサンプル</title>
-  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes"/>
   <!-- Include manifest file in the page -->
-  <link rel="manifest" href="js/manifest.json" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="stylesheet" href="css/style.css"/>
   <script src="js/main.js" defer></script>
 </head>
 
 <body>
+  <h1>プッシュ通知のサンプル</h1>
+
   <div class="supported">
     <div>
       <h2>プッシュ通知の配信設定</h2>
@@ -34,6 +36,12 @@
 
 
   </div>
+
+  <h2>お使いのブラウザのサポート状況</h2>
+  <ul>
+    <li><span class="support-sw"></span> Service Worker</li>
+    <li><span class="support-push"></span> PushManager</li>
+  </ul>
 
 </body>
 </html>
