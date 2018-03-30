@@ -185,3 +185,15 @@ function selectCurlText() {
   window.getSelection().removeAllRanges();
   window.getSelection().addRange(range);
 }
+
+// おまけ：ブラウザのサポート状況を調べる
+checkFeature();
+
+function checkFeature() {
+  const enabledSw = 'serviceWorker' in navigator;
+  const enabledPush = 'PushManager' in window;
+  console.log(enabledSw, enabledPush);
+  document.querySelector('.support-sw').innerHTML = enabledSw ? '🆗' : '🆖';
+  document.querySelector('.support-push').innerHTML = enabledPush ? '🆗' : '🆖';
+}
+
