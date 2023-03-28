@@ -4,7 +4,9 @@ const API_KEY = 'AIzaSyDpx5LWS0vpR_PfHJ4tMdWBwV9JR-N4QiE';
 // GCMのエンドポイントのBaseURL
 const GCM_ENDPOINT = 'https://android.googleapis.com/gcm/send';
 
+/** @type {HTMLTextAreaElement} */
 const elementTextarea = document.querySelector('#curlCommand');
+/** @type {HTMLInputElement} */
 const elementPushButton = document.querySelector('#pushEnableButton');
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -49,6 +51,7 @@ async function initServiceWorker() {
 
   // 登録されていなければ処理を中断
   if (subscription === null) {
+    console.log('no subscription.')
     return;
   }
 
@@ -63,14 +66,16 @@ async function initServiceWorker() {
  * subscriptionを登録し結果を取得します。
  */
 async function subscribe() {
+  console.log('subscribe...')
 
   const serviceWorkerRegistration = await navigator.serviceWorker.ready;
 
   try {
     const subscription = await serviceWorkerRegistration.pushManager.subscribe({
-      userVisibleOnly: true
+      userVisibleOnly: true, // TODO applicationServerKey の指定が必要になったみたい
+      // applicationServerKey: ""
     });
-
+    console.log('subscribe done.')
     sendSubscriptionToServer(subscription);
   } catch (e) {
     if (Notification.permission === 'denied') {
@@ -192,7 +197,7 @@ checkFeature();
 function checkFeature() {
   const enabledSw = 'serviceWorker' in navigator;
   const enabledPush = 'PushManager' in window;
-  console.log(enabledSw, enabledPush);
+  console.log({enabledSw, enabledPush});
   document.querySelector('.support-sw').innerHTML = enabledSw ? '🆗' : '🆖';
   document.querySelector('.support-push').innerHTML = enabledPush ? '🆗' : '🆖';
 }
