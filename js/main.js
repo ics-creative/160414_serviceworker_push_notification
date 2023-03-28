@@ -72,7 +72,8 @@ async function subscribe() {
 
   try {
     const subscription = await serviceWorkerRegistration.pushManager.subscribe({
-      userVisibleOnly: true, // TODO applicationServerKey の指定が必要になったみたい
+      userVisibleOnly: true,
+      // TODO applicationServerKey の指定が必要になったみたい
       // applicationServerKey: ""
     });
     console.log('subscribe done.')
